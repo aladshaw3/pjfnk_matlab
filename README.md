@@ -7,3 +7,16 @@ This repository is for an implementation of the Preconditioned Jacobian-Free New
 # Requirements
 
 - MATLAB
+
+# Functions
+
+- JacobianOperator
+
+Performs an action of a Jacobian on any vector v without forming the Jacobian
+explicitly. 
+
+Jv= (F(x+epsilon*v) - F(x))/epsilon;
+
+where F(x) evaluates the non-linear system at state x.
+where v is the vector being multiplied by the Jacobian.
+where epsilon is a small perturbation value. 
