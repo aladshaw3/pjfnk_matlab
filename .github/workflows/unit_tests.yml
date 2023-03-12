@@ -1,0 +1,34 @@
+name: Matlab Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: '30 5 * * 5'
+
+jobs:
+  unit-tests:
+    name: Run Matlab Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@main
+
+      - name: Run tests and generate artifacts
+        uses: matlab-actions/run-tests@v1.3.0
+        with:
+          source-folder: source
+          test-results-junit: test-results/results.xml
+          code-coverage-cobertura: code-coverage/coverage.xml
+
+      - name: Produce Coverage Report
+        uses: 5monkeys/cobertura-action@master
+        with:
+          path: code-coverage/coverage.xml
+          minimum_coverage: 70
+          fail_below_threshold: 50
+          show_missing: true
+          skip_covered: false
+          link_missing_lines: false
