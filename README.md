@@ -20,3 +20,22 @@ Jv= (F(x+epsilon*v) - F(x))/epsilon;
 where F(x) evaluates the non-linear system at state x.
 where v is the vector being multiplied by the Jacobian.
 where epsilon is a small perturbation value. 
+
+---
+
+- NumericalJacobianMatrix
+
+Approximates the full Jacobian with finite-differences approach. Can return
+either a 'dense' or 'sparse' Jacobian via user request. Default is to return 
+a 'dense' Jacobian. 
+
+```
+% Pseudo Code
+for i=1:N
+    dx = x;
+    dx(i,1) =  x(i,1) + epsilon;
+    J(:, i) = (fun(dx) - F)/epsilon;
+end
+```
+
+---
