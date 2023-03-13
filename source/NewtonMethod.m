@@ -40,7 +40,8 @@
 %   Returns:
 %       x: Solution vector
 %       stats: Solver stats
-function [x,stats] = NewtonMethod(fun,x0,options)
+%       options: A copy of the options structure
+function [x,stats,options] = NewtonMethod(fun,x0,options)
     % Validate the inputs
     arguments
         fun (1,1) {mustBeA(fun,'function_handle')}
@@ -80,7 +81,7 @@ function [x,stats] = NewtonMethod(fun,x0,options)
     
     % Iterate up to maxiter
     for i=1:options.maxiter
-        % Perform 1 Newton Step
+        % Perform a Newton Step
         %   J*s = -F --> s = -J\F
         x = x0 - options.jacfun(x0)\F;
 
@@ -99,7 +100,7 @@ function [x,stats] = NewtonMethod(fun,x0,options)
             stats.converged_message = 'Difference in x below tolerance';
             break;
         end
-        if (norm(options.jacfun(x)) <= options.gtol)
+        if (norm(options.jacfun(x),"fro") <= options.gtol)
             stats.converged_id = 3;
             stats.converged_message = 'Jacobian norm below slope tolerance';
             break;

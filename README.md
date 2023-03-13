@@ -10,7 +10,7 @@ This repository is for an implementation of the Preconditioned Jacobian-Free New
 
 # Functions
 
-- JacobianOperator
+- `JacobianOperator`
 
 Performs an action of a Jacobian on any vector v without forming the Jacobian
 explicitly. 
@@ -21,12 +21,14 @@ Jv = (F(x+epsilon*v) - F(x))/epsilon;
 ```
 
 where F(x) evaluates the non-linear system at state x.
+
 where v is the vector being multiplied by the Jacobian.
+
 where epsilon is a small perturbation value. 
 
 ---
 
-- NumericalJacobianMatrix
+- `NumericalJacobianMatrix`
 
 Approximates the full Jacobian with finite-differences approach. Can return
 either a 'dense' or 'sparse' Jacobian via user request. Default is to return 
@@ -42,6 +44,34 @@ end
 ```
 
 where F(x) evaluates the non-linear system at state x.
+
 where epsilon is a small perturbation value. 
+
+---
+
+- `NewtonMethod`
+
+Performs a basic Newton's method with direct inversion of the Jacobian matrix.
+The user may provide an exact Jacobian function as a function handle. If they 
+do not, then the method will use the `NumericalJacobianMatrix` function to 
+approximate the Jacobian. 
+
+```
+% Pseudo Code
+while (norm(F(x)) > ftol)
+    % Perform a Newton Step
+    %   J*s = -F --> s = -J\F
+    x = x0 - J(x)\F(x);
+
+    % Update x
+    x0=x;
+end
+```
+
+where F(x) evaluates the non-linear system at state x.
+
+where J(x) evaluates the Jacobian matrix at state x.
+
+where ftol is the error or residual tolerance for convergence. 
 
 ---
