@@ -1,3 +1,8 @@
+# Matlab Junk
+*.asv
+*.slxc
+
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
