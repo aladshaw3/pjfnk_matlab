@@ -76,31 +76,39 @@ function [x,stats,options] = NewtonMethod(fun,x0,options)
     F = fun(x0);
     stats = struct();
     stats.nl_iter=0;
+    stats.fnorm = zeros(options.maxiter,1);
+    stats.xnorm = zeros(options.maxiter,1);
+    stats.gnorm = zeros(options.maxiter,1);
     stats.converged_id = 0;
     stats.converged_message = 'Not Started';
     
     % Iterate up to maxiter
+    a = 1;  % Scale factor for step size
     for i=1:options.maxiter
         % Perform a Newton Step
         %   J*s = -F --> s = -J\F
-        x = x0 - options.jacfun(x0)\F;
+        s = - options.jacfun(x0)\F;
+        x = x0 + s*a;
 
         % Update residuals and iteration count
         F = fun(x);
         stats.nl_iter=stats.nl_iter+1;
+        stats.fnorm(i,1) = norm(F);
+        stats.xnorm(i,1) = norm(x-x0);
+        stats.gnorm(i,1) = norm(options.jacfun(x0),"Inf");
 
         % Check status
-        if (norm(F) <= options.ftol)
+        if (stats.fnorm(i,1) <= options.ftol)
             stats.converged_id = 1;
             stats.converged_message = 'Residual below function tolerance';
             break;
         end
-        if (norm(x-x0) <= options.xtol)
+        if (stats.xnorm(i,1) <= options.xtol)
             stats.converged_id = 2;
             stats.converged_message = 'Difference in x below tolerance';
             break;
         end
-        if (norm(options.jacfun(x),"fro") <= options.gtol)
+        if (stats.gnorm(i,1) <= options.gtol)
             stats.converged_id = 3;
             stats.converged_message = 'Jacobian norm below slope tolerance';
             break;
@@ -109,6 +117,11 @@ function [x,stats,options] = NewtonMethod(fun,x0,options)
         % Update x
         x0=x;
     end
+
+    % Slice the norm reports
+    stats.fnorm = stats.fnorm(1:stats.nl_iter,1);
+    stats.xnorm = stats.xnorm(1:stats.nl_iter,1);
+    stats.gnorm = stats.gnorm(1:stats.nl_iter,1);
 
     % Report any errors
     if (stats.converged_message < 1)
