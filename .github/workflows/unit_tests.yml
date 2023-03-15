@@ -30,14 +30,4 @@ jobs:
         uses: codecov/codecov-action@v3
         with:
           files: code-coverage/coverage.xml
-          fail_ci_if_error: true # optional (default = false)
-
-      #- name: Produce Coverage Report
-      #  uses: 5monkeys/cobertura-action@master
-      #  with:
-      #    path: code-coverage/coverage.xml
-      #    minimum_coverage: 70
-      #    fail_below_threshold: 50
-      #    show_missing: true
-      #    skip_covered: false
-      #    link_missing_lines: false
+          fail_ci_if_error: true 
