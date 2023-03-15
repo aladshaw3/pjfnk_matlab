@@ -1,12 +1,18 @@
 [![Checks](https://github.com/aladshaw3/pjfnk_matlab/actions/workflows/unit_tests.yml/badge.svg)](https://github.com/aladshaw3/pjfnk_matlab/actions/workflows/unit_tests.yml)
 [![codecov](https://codecov.io/gh/aladshaw3/pjfnk_matlab/branch/main/graph/badge.svg)](https://codecov.io/gh/aladshaw3/pjfnk_matlab) 
 
-# PJFNK Matlab
-This repository is for an implementation of the Preconditioned Jacobian-Free Newton-Krylov method in Matlab
+# PJFNK MATLAB
+This repository is for an implementation of the Preconditioned Jacobian-Free Newton-Krylov method in Matlab,
+as well as methods for standard full Newton method and formulation of full and sparse Numerical
+Jacobian matrices. 
 
 # Requirements
 
 - MATLAB
+- [Optional] Optimization Toolbox
+
+**NOTE**: The Optimization Toolbox in MATLAB is not required to run these 
+codes, but is used for validation checks in some of the unit tests. 
 
 # Functions
 
@@ -75,3 +81,40 @@ where J(x) evaluates the Jacobian matrix at state x.
 where ftol is the error or residual tolerance for convergence. 
 
 ---
+
+# Linesearch Methods
+
+- `StandardNewtonStep`
+
+Takes a standard Newton step without any linesearching.
+
+```
+% Invoked via the 'options' struct() for Newton methods
+options.linesearch = 'none';
+```
+
+---
+
+- `BacktrackingLinesearch`
+
+Attempts to take a standard Newton step, then if the step fails to show sufficient
+reduction in the norm, it reduces the step size by the 'contraction_rate' factor.
+Reduction of step size stops when it reaches the 'min_step' tolerance, regardless
+of whether or not sufficient norm reduction was achieved. 
+
+Guarantees that the residual reduction is monotonic, but may result in step sizes
+too small to get a solution in reasonable timeframe. 
+
+```
+% Invoked via the 'options' struct() for Newton methods
+options.linesearch = 'backtracking';
+options.linesearch_opts = struct('min_step',1e-3,'contraction_rate',0.5);
+```
+
+---
+
+# Citation
+
+Ladshaw, A.P., "PJFNK MATLAB: A MATLAB implementation for Jacobian-Free
+Newton-Krlov solvers for non-linear systems," https://github.com/aladshaw3/pjfnk_matlab, 
+Accessed (Month) (Day), (Year).
