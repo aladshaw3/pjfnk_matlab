@@ -1,3 +1,51 @@
+%%  @package JacobianFreeNewtonKrylov
+%
+%   @brief JacobianFreeNewtonKrylov function that solves F(x) = 0 using a
+%   Krylov subspace method with the Jacobian operator
+%
+%   @details JacobianFreeNewtonKrylov is a function that solves F(x) = 0
+%   using a Krylov subspace method. The system does not actually need a
+%   Jacobian, nor does it need to form a numerical Jacobian. Instead, it
+%   uses a Jacobian Operator function that approximates the action of a
+%   matrix on a vector. In this way, this methodology is entirely
+%   matrix-free. 
+%
+%   @author Austin Ladshaw
+%
+%   @date 03/12/2023
+%
+%   @copyright This software was designed and built by Austin Ladshaw,
+%   2023. It is openly available through the MIT License. 
+
+%% JacobianFreeNewtonKrylov
+%
+%       Calling this function will use the Jacobian-Free Newton-Krylov
+%       method to solve a non-linear system of equations for a user 
+%       provided function 'fun' and user provided initial guess vector x0;
+%
+%   @param fun User defined function handle [F = fun(x)]
+%   @param x0 Nx1 vector of non-linear variables
+%   @param options A Matlab data structure that holds all function options
+%      struct:
+%        maxiter: The maximum allowable number of iterations
+%        ftol: The solver residual tolerance
+%        xtol: The solver non-linear variable tolerance
+%        epsilon: The size of the step to use for the Jacobian operator
+%        krylov_solver: ['gmres', 'bicgstab', etc...]
+%        krylov_opts: struct() whose form depends on the krylov solver
+%               for more information, see the MathWorks documentation:
+%               https://www.mathworks.com/help/matlab/math/iterative-methods-for-linear-systems.html
+%        linesearch: ['none','backtracking']
+%        linesearch_opts:  struct() whose form depends on linesearch method
+%               for 'none' --> empty
+%               for 'backtracking'
+%                       min_step: The minimun step size
+%                       contraction_rate: How fast to shrink step size
+%
+%   Returns:
+%       x: Solution vector
+%       stats: Solver stats
+%       options: A copy of the options structure
 function [x,stats,options] = JacobianFreeNewtonKrylov(fun,x0, options)
     % Validate the inputs
     arguments
