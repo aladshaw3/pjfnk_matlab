@@ -82,6 +82,33 @@ where ftol is the error or residual tolerance for convergence.
 
 ---
 
+- `JacobianFreeNewtonKrylov`
+
+Performs a Jacobian-Free Newton-Krylov solve with associated user options.
+The user may choose any valid Krylov method to solve the Newton step.  
+
+```
+% Pseudo Code
+while (norm(F(x)) > ftol)
+    % Perform a Newton Step
+    %   J*s = -F --> s = -J\F
+    x = x0 + KrylovSolve( @JacOp( @F(x0),x0,F), -F );
+
+    % Update x
+    x0=x;
+end
+```
+
+where F(x) evaluates the non-linear system at state x.
+
+where JacOp evaluates the Jacobian operator at state x.
+
+where KrylovSolve evaluates the solution to the linear system.
+
+where ftol is the error or residual tolerance for convergence. 
+
+---
+
 # Linesearch Methods
 
 - `StandardNewtonStep`
