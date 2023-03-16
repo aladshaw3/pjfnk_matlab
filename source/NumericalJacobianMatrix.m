@@ -39,22 +39,19 @@ function J = NumericalJacobianMatrix(fun,x, mtype, epsilon)
     F = fun(x);
     N = size(x,1);
     M = size(F,1);
+    I = speye(M,N);
 
     if (strcmpi(mtype,'dense'))
         % Preallocate dense matrix
         J = zeros(M,N);
         for i=1:N
-            dx = x;
-            dx(i,1) =  x(i,1) + epsilon;
-            J(:, i) = (fun(dx) - F)/epsilon;
+            J(:, i) = (fun( x+I(:,i)*epsilon ) - F)/epsilon;
         end
     else
         % Preallocate sparse matrix with M*N/4 non-zeros
         J = spalloc(M,N,ceil(max([M*N/100,10*M,10*N])));
         for i=1:N
-            dx = x;
-            dx(i,1) =  x(i,1) + epsilon;
-            J = J+sparse(1:M,i*ones(1,M),((fun(dx) - F)/epsilon),M,N);
+            J = J+sparse(1:M,i*ones(1,M),((fun( x+I(:,i)*epsilon ) - F)/epsilon),M,N);
         end
     end
 end

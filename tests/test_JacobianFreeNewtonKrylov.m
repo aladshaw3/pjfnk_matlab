@@ -35,6 +35,7 @@ x0 = [1; 1; 1];
 
 % Solver options
 solver_info = struct();
+solver_info.linesearch = 'backtracking';
 solver_info.krylov_solver = 'bicgstab';
 
 tic;
