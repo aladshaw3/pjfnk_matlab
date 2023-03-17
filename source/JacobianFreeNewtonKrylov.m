@@ -30,7 +30,12 @@
 %        maxiter: The maximum allowable number of iterations
 %        ftol: The solver residual tolerance
 %        xtol: The solver non-linear variable tolerance
+%        disp_warnings: ['on','off'] - default = 'off'
+%        use_matrix: [true, false]
 %        epsilon: The size of the step to use for the Jacobian operator
+%        mtype: The type of jacobian to use ['dense','sparse'] (optional)
+%        jacfun: function handle for evaluation of the Jacobian matrix at 
+%                 each iteration [J = jacfun(fun,x)] (optional)
 %        krylov_solver: ['gmres', 'bicgstab', etc...]
 %        krylov_opts: struct() whose form depends on the krylov solver
 %               for more information, see the MathWorks documentation:
@@ -58,8 +63,28 @@ function [x,stats,options] = JacobianFreeNewtonKrylov(fun,x0, options)
     if (~isfield(options,'epsilon'))
         options.epsilon = sum(sqrt(eps('double'))*(1+x0));
     end
+    if (~isfield(options,'use_matrix'))
+        options.use_matrix = false;
+    else
+        if (~islogical(options.use_matrix))
+            options.use_matrix = false;
+        end
+    end
+    if (~isfield(options,'disp_warnings'))
+        options.disp_warnings = 'off';
+    else
+        if (~all(ismember(options.disp_warnings, {'on','off'}), 'all'))
+            options.disp_warnings = 'off';
+        end
+    end
+    if (~isfield(options,'mtype'))
+        options.mtype = 'sparse';
+    end
+    if (~isfield(options,'jacfun'))
+        options.jacfun = @(x) NumericalJacobianMatrix(fun,x,options.mtype,options.epsilon);
+    end
     if (~isfield(options,'maxiter'))
-        options.maxiter = 10*size(x0,1);
+        options.maxiter = min(10*size(x0,1), 30);
     end
     if (~isfield(options,'ftol'))
         options.ftol = 1e-6;
@@ -88,6 +113,12 @@ function [x,stats,options] = JacobianFreeNewtonKrylov(fun,x0, options)
         options.krylov_opts = struct();
     end
 
+    % Apply warning choice
+    warning(options.disp_warnings,'MATLAB:gmres:tooSmallTolerance')
+    warning(options.disp_warnings,'MATLAB:bicgstab:tooSmallTolerance')
+    warning(options.disp_warnings,'MATLAB:illConditionedMatrix')
+    
+
     % Register the linesearch method
     if (strcmpi(options.linesearch,'none'))
         options.linfun = @(fun,x,F,s,linopts) StandardNewtonStep(fun,x,F,s,linopts);
@@ -108,7 +139,6 @@ function [x,stats,options] = JacobianFreeNewtonKrylov(fun,x0, options)
 
     % Register the Krylov method
     if (strcmpi(options.krylov_solver,'gmres'))
-        warning('off','MATLAB:gmres:tooSmallTolerance')
 
         % Checkfor gmres options
         %       gmres(A,b,restart,tol,maxit,M1,M2,x0)
@@ -127,12 +157,11 @@ function [x,stats,options] = JacobianFreeNewtonKrylov(fun,x0, options)
         if (~isfield(options.krylov_opts,'M2'))
             options.krylov_opts.M2 = [];
         end
-        options.krylov_fun = @(Jop, F, s) gmres(Jop, F, ...
+        options.krylov_fun = @(Jop, F, x0) gmres(Jop, F, ...
             options.krylov_opts.restart, options.krylov_opts.tol, options.krylov_opts.maxit, ...
-                options.krylov_opts.M1, options.krylov_opts.M2, s);
+                options.krylov_opts.M1, options.krylov_opts.M2, []);
 
     elseif (strcmpi(options.krylov_solver,'bicgstab'))
-        warning('off','MATLAB:bicgstab:tooSmallTolerance')
 
         % Checkfor bicgstab options
         %       bicgstab(A,b,tol,maxit,M1,M2,x0)
@@ -148,9 +177,9 @@ function [x,stats,options] = JacobianFreeNewtonKrylov(fun,x0, options)
         if (~isfield(options.krylov_opts,'M2'))
             options.krylov_opts.M2 = [];
         end
-        options.krylov_fun = @(Jop, F, s) bicgstab(Jop, F, ...
+        options.krylov_fun = @(Jop, F, x0) bicgstab(Jop, F, ...
             options.krylov_opts.tol, options.krylov_opts.maxit, ...
-                options.krylov_opts.M1, options.krylov_opts.M2, s);
+                options.krylov_opts.M1, options.krylov_opts.M2, []);
     end
 
     % Initialize structures 
@@ -179,8 +208,13 @@ function [x,stats,options] = JacobianFreeNewtonKrylov(fun,x0, options)
         %        Jop = @(F) JacobianOperator(fun,x,F,eps);
         %        s = gmres(Jop,-F); % (or other Krylov method)
 
+        % NOTE: Can replace Jop with options.jacfun(x0) to use the matrix 
         Jop = @(F) JacobianOperator(fun,x0,F,options.epsilon);
-        [s,lin_flag,lin_relres,lin_iter,lin_resvec] = options.krylov_fun(Jop,-F, s);
+        if (options.use_matrix)
+            [s,lin_flag,lin_relres,lin_iter,lin_resvec] = options.krylov_fun(options.jacfun(x0),-F, x0);
+        else
+            [s,lin_flag,lin_relres,lin_iter,lin_resvec] = options.krylov_fun(Jop,-F, x0);
+        end
         stats.krylov_stats.exit_status_id(i) = lin_flag;
         stats.krylov_stats.linear_res(i) = lin_relres;
         stats.krylov_stats.linear_steps(i) = max(lin_iter);
