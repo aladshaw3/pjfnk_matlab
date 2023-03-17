@@ -193,9 +193,7 @@ function [x,stats,options] = JacobianFreeNewtonKrylov(fun,x0, options)
     stats.krylov_stats.exit_status_id = zeros(options.maxiter,1);
     stats.krylov_stats.linear_res = zeros(options.maxiter,1);
     stats.krylov_stats.linear_steps = zeros(options.maxiter,1);
-
-    % NOTE: Likely need to make this a cell array since it is 'ragged'
-    %stats.krylov_stats.resvec = zeros(options.maxiter,options.krylov_opts.maxit+1);
+    stats.krylov_stats.resvec = cell(options.maxiter,1);
 
     stats.fnorm(1,1) = norm(F);
     stats.xnorm(1,1) = norm(-x0);
@@ -218,8 +216,7 @@ function [x,stats,options] = JacobianFreeNewtonKrylov(fun,x0, options)
         stats.krylov_stats.exit_status_id(i) = lin_flag;
         stats.krylov_stats.linear_res(i) = lin_relres;
         stats.krylov_stats.linear_steps(i) = max(lin_iter);
-
-        %stats.krylov_stats.resvec(i,:) = lin_resvec(1:options.krylov_opts.maxit+1)';
+        stats.krylov_stats.resvec{i,1} = lin_resvec;
 
         x = x0 + options.linfun(fun,x0,F,s,options.linesearch_opts);
 
@@ -251,8 +248,7 @@ function [x,stats,options] = JacobianFreeNewtonKrylov(fun,x0, options)
     stats.krylov_stats.exit_status_id = stats.krylov_stats.exit_status_id(1:stats.nl_iter,1);
     stats.krylov_stats.linear_res = stats.krylov_stats.linear_res(1:stats.nl_iter,1);
     stats.krylov_stats.linear_steps = stats.krylov_stats.linear_steps(1:stats.nl_iter,1);
-
-    %stats.krylov_stats.resvec = stats.krylov_stats.resvec(1:stats.nl_iter,:);
+    stats.krylov_stats.resvec(stats.nl_iter+1:end,:) = [];
 
     % Report any errors
     if (stats.converged_id == 0)
