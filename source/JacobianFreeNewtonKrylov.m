@@ -112,6 +112,9 @@ function [x,stats,options] = JacobianFreeNewtonKrylov(fun,x0, options)
     if (~isfield(options,'krylov_opts'))
         options.krylov_opts = struct();
     end
+    if (~isfield(options.krylov_opts,'user_data'))
+        options.krylov_opts.user_data = struct();
+    end
 
     % Apply warning choice
     warning(options.disp_warnings,'MATLAB:gmres:tooSmallTolerance')
@@ -153,9 +156,17 @@ function [x,stats,options] = JacobianFreeNewtonKrylov(fun,x0, options)
         end
         if (~isfield(options.krylov_opts,'M1'))
             options.krylov_opts.M1 = [];
+        else
+            if (isa(options.krylov_opts.M1,'function_handle'))
+                options.krylov_opts.M1 = @(b) options.krylov_opts.M1(b,options.jacfun,x0,options.krylov_opts.user_data);
+            end
         end
         if (~isfield(options.krylov_opts,'M2'))
             options.krylov_opts.M2 = [];
+        else
+            if (isa(options.krylov_opts.M2,'function_handle'))
+                options.krylov_opts.M2 = @(b) options.krylov_opts.M2(b,options.jacfun,x0,options.krylov_opts.user_data);
+            end
         end
         options.krylov_fun = @(Jop, F, x0) gmres(Jop, F, ...
             options.krylov_opts.restart, options.krylov_opts.tol, options.krylov_opts.maxit, ...
@@ -173,9 +184,17 @@ function [x,stats,options] = JacobianFreeNewtonKrylov(fun,x0, options)
         end
         if (~isfield(options.krylov_opts,'M1'))
             options.krylov_opts.M1 = [];
+        else
+            if (isa(options.krylov_opts.M1,'function_handle'))
+                options.krylov_opts.M1 = @(b) options.krylov_opts.M1(b,options.jacfun,x0,options.krylov_opts.user_data);
+            end
         end
         if (~isfield(options.krylov_opts,'M2'))
             options.krylov_opts.M2 = [];
+        else
+            if (isa(options.krylov_opts.M2,'function_handle'))
+                options.krylov_opts.M2 = @(b) options.krylov_opts.M2(b,options.jacfun,x0,options.krylov_opts.user_data);
+            end
         end
         options.krylov_fun = @(Jop, F, x0) bicgstab(Jop, F, ...
             options.krylov_opts.tol, options.krylov_opts.maxit, ...
@@ -208,11 +227,20 @@ function [x,stats,options] = JacobianFreeNewtonKrylov(fun,x0, options)
 
         % NOTE: Can replace Jop with options.jacfun(x0) to use the matrix 
         Jop = @(F) JacobianOperator(fun,x0,F,options.epsilon);
+
+        if (isa(options.krylov_opts.M1,'function_handle'))
+            options.krylov_opts.M1 = @(b) options.krylov_opts.M1(b,options.jacfun,x0,options.krylov_opts.user_data);
+        end
+        if (isa(options.krylov_opts.M2,'function_handle'))
+            options.krylov_opts.M2 = @(b) options.krylov_opts.M2(b,options.jacfun,x0,options.krylov_opts.user_data);
+        end
+
         if (options.use_matrix)
             [s,lin_flag,lin_relres,lin_iter,lin_resvec] = options.krylov_fun(options.jacfun(x0),-F, x0);
         else
             [s,lin_flag,lin_relres,lin_iter,lin_resvec] = options.krylov_fun(Jop,-F, x0);
         end
+
         stats.krylov_stats.exit_status_id(i) = lin_flag;
         stats.krylov_stats.linear_res(i) = lin_relres;
         stats.krylov_stats.linear_steps(i) = max(lin_iter);

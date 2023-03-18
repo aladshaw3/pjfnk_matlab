@@ -115,7 +115,7 @@ F = @(x) [A*x-b];
 
 % Setup solver into
 solver_info = struct();
-solver_info.krylov_solver = 'gmres';
+solver_info.krylov_solver = 'bicgstab';
 solver_info.use_matrix = true;
 solver_info.maxiter = 20;
 solver_info.ftol = 1e-6;
@@ -130,6 +130,7 @@ solver_info.krylov_opts = struct();
 solver_info.krylov_opts.restart = []; % No restarts
 solver_info.krylov_opts.tol = 1e-6;
 
+
 % NOTE: In order to generalize the preconditioning, we will need to be able
 % to pass more information to the M1 and M2 functions. They must be
 % templated to only accept a single vector 'b', but if our jacobian is
@@ -142,18 +143,19 @@ solver_info.krylov_opts.tol = 1e-6;
 % before hand. NOTE: The scope of these are local, so 'A' has to be defined
 % above here (and be unchanged) for this to work. Thus, more complex
 % preconditioners may need some additional infrastructure to generalize. 
-solver_info.krylov_opts.M1 = @(b) ilu_precon(b,solver_info,A);
+solver_info.krylov_opts.M1 = @(b,Jacfun,x,options) ilu_precon(b,Jacfun,x,options);
 
 % Alternative: 1 part preconditioner
 %[L,U] = ilu(A,struct('type','ilutp','droptol',1e-6));
-%solver_info.krylov_opts.M1 = @(b) U\(L\b);
+%solver_info.krylov_opts.M1 = @(b,Jacfun,x,options) U\(L\b);
 
 % Alternative: 2 part preconditioner 
 %[L,U] = ilu(A,struct('type','ilutp','droptol',1e-6));
-%solver_info.krylov_opts.M1 = @(b) L\b;
-%solver_info.krylov_opts.M2 = @(b) U\b;
+%solver_info.krylov_opts.M1 = @(b,Jacfun,x,options) L\b;
+%solver_info.krylov_opts.M2 = @(b,Jacfun,x,options) U\b;
 
 % Call the solver
+
 tic;
 [xjf,statsjf,optsjf] = JacobianFreeNewtonKrylov(F,x0,solver_info);
 toc;
@@ -162,7 +164,7 @@ assert( statsjf.fnorm(end) <= optsjf.ftol )
 
 % Defined preconditioner helper
 %       NOTE: x comes in as 'b' (or '-F') in this context
-function M = ilu_precon(b,options,A)
-    [L,U] = ilu(A,struct('type','ilutp','droptol',1e-6));
+function M = ilu_precon(b,Jac,x,options)
+    [L,U] = ilu(Jac(x),struct('type','ilutp','droptol',1e-6));
     M = U\(L\b);
 end
