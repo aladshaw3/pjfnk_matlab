@@ -139,10 +139,10 @@ solver_info.krylov_opts.tol = 1e-6;
 % handles, and if they are then passing additional args.
 
 % Create a function preconditioner. The templated function must ONLY accept
-% a vector x. HOWEVER, we can pass other args to it if they are defined
-% before hand. NOTE: The scope of these are local, so 'A' has to be defined
-% above here (and be unchanged) for this to work. Thus, more complex
-% preconditioners may need some additional infrastructure to generalize. 
+% a vector b. HOWEVER, we can pass other args to it if they are defined
+% before hand. NOTE: This is a standard tempate. All user defined 
+% preconditioning functions must adhere to this format
+%
 solver_info.krylov_opts.M1 = @(b,Jacfun,x,options) ilu_precon(b,Jacfun,x,options);
 
 % Alternative: 1 part preconditioner

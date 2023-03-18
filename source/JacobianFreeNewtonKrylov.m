@@ -156,21 +156,27 @@ function [x,stats,options] = JacobianFreeNewtonKrylov(fun,x0, options)
         end
         if (~isfield(options.krylov_opts,'M1'))
             options.krylov_opts.M1 = [];
+            M1 = [];
         else
             if (isa(options.krylov_opts.M1,'function_handle'))
-                options.krylov_opts.M1 = @(b) options.krylov_opts.M1(b,options.jacfun,x0,options.krylov_opts.user_data);
+                M1 = @(b) options.krylov_opts.M1(b,options.jacfun,x0,options.krylov_opts.user_data);
+            else
+                M1 = options.krylov_opts.M1;
             end
         end
         if (~isfield(options.krylov_opts,'M2'))
             options.krylov_opts.M2 = [];
+            M2 = [];
         else
             if (isa(options.krylov_opts.M2,'function_handle'))
-                options.krylov_opts.M2 = @(b) options.krylov_opts.M2(b,options.jacfun,x0,options.krylov_opts.user_data);
+                M2 = @(b) options.krylov_opts.M2(b,options.jacfun,x0,options.krylov_opts.user_data);
+            else
+                M2 = options.krylov_opts.M2;
             end
         end
-        options.krylov_fun = @(Jop, F, x0) gmres(Jop, F, ...
+        options.krylov_fun = @(Jop, F, x0, M1, M2) gmres(Jop, F, ...
             options.krylov_opts.restart, options.krylov_opts.tol, options.krylov_opts.maxit, ...
-                options.krylov_opts.M1, options.krylov_opts.M2, []);
+                M1, M2, []);
 
     elseif (strcmpi(options.krylov_solver,'bicgstab'))
 
@@ -184,21 +190,27 @@ function [x,stats,options] = JacobianFreeNewtonKrylov(fun,x0, options)
         end
         if (~isfield(options.krylov_opts,'M1'))
             options.krylov_opts.M1 = [];
+            M1 = [];
         else
             if (isa(options.krylov_opts.M1,'function_handle'))
-                options.krylov_opts.M1 = @(b) options.krylov_opts.M1(b,options.jacfun,x0,options.krylov_opts.user_data);
+                M1 = @(b) options.krylov_opts.M1(b,options.jacfun,x0,options.krylov_opts.user_data);
+            else
+                M1 = options.krylov_opts.M1;
             end
         end
         if (~isfield(options.krylov_opts,'M2'))
             options.krylov_opts.M2 = [];
+            M2 = [];
         else
             if (isa(options.krylov_opts.M2,'function_handle'))
-                options.krylov_opts.M2 = @(b) options.krylov_opts.M2(b,options.jacfun,x0,options.krylov_opts.user_data);
+                M2 = @(b) options.krylov_opts.M2(b,options.jacfun,x0,options.krylov_opts.user_data);
+            else
+                M2 = options.krylov_opts.M2;
             end
         end
-        options.krylov_fun = @(Jop, F, x0) bicgstab(Jop, F, ...
+        options.krylov_fun = @(Jop, F, x0, M1, M2) bicgstab(Jop, F, ...
             options.krylov_opts.tol, options.krylov_opts.maxit, ...
-                options.krylov_opts.M1, options.krylov_opts.M2, []);
+                M1, M2, []);
     end
 
     % Initialize structures 
@@ -228,17 +240,20 @@ function [x,stats,options] = JacobianFreeNewtonKrylov(fun,x0, options)
         % NOTE: Can replace Jop with options.jacfun(x0) to use the matrix 
         Jop = @(F) JacobianOperator(fun,x0,F,options.epsilon);
 
+        % These resets of handles are required due to the need to update x0
+        % values in the jacobian each time 
         if (isa(options.krylov_opts.M1,'function_handle'))
-            options.krylov_opts.M1 = @(b) options.krylov_opts.M1(b,options.jacfun,x0,options.krylov_opts.user_data);
+            M1 = @(b) options.krylov_opts.M1(b,options.jacfun,x0,options.krylov_opts.user_data);
         end
         if (isa(options.krylov_opts.M2,'function_handle'))
-            options.krylov_opts.M2 = @(b) options.krylov_opts.M2(b,options.jacfun,x0,options.krylov_opts.user_data);
+            M2 = @(b) options.krylov_opts.M2(b,options.jacfun,x0,options.krylov_opts.user_data);
         end
+        
 
         if (options.use_matrix)
-            [s,lin_flag,lin_relres,lin_iter,lin_resvec] = options.krylov_fun(options.jacfun(x0),-F, x0);
+            [s,lin_flag,lin_relres,lin_iter,lin_resvec] = options.krylov_fun(options.jacfun(x0),-F, x0, M1, M2);
         else
-            [s,lin_flag,lin_relres,lin_iter,lin_resvec] = options.krylov_fun(Jop,-F, x0);
+            [s,lin_flag,lin_relres,lin_iter,lin_resvec] = options.krylov_fun(Jop,-F, x0, M1, M2);
         end
 
         stats.krylov_stats.exit_status_id(i) = lin_flag;
