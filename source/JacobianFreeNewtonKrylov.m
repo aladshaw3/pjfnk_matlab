@@ -34,8 +34,8 @@
 %        maxiter: The maximum allowable number of iterations
 %        ftol: The solver residual tolerance
 %        xtol: The solver non-linear variable tolerance
-%        disp_warnings: ['on','off'] - default = 'off'
-%        use_matrix: [true, false]
+%        disp_warnings: ['on','off'] (default = 'off')
+%        use_matrix: [true, false] (default = false)
 %        epsilon: The size of the step to use for the Jacobian operator
 %        mtype: The type of jacobian to use ['dense','sparse'] (optional)
 %        jacfun: function handle for evaluation of the Jacobian matrix at 
@@ -51,6 +51,8 @@
 %               for 'backtracking'
 %                       min_step: The minimun step size
 %                       contraction_rate: How fast to shrink step size
+%         equilibrate: [true, false] (default = false)
+%         reordering_method: ['dissect','amd','symrcm'] (default = 'dissect')
 %
 %   Returns:
 %       x: Solution vector
@@ -120,6 +122,23 @@ function [x,stats,options] = JacobianFreeNewtonKrylov(fun,x0, options)
     if (~isfield(options.krylov_opts,'user_data'))
         options.krylov_opts.user_data = struct();
     end
+    if (~isfield(options,'equilibrate'))
+        options.equilibrate = false;
+    end
+    if (~isfield(options,'reordering_method'))
+        options.reordering_method = 'dissect';
+    else
+        if (~all(ismember(options.reordering_method, {'dissect','amd','symrcm'}), 'all'))
+            options.reordering_method = 'dissect';
+        end
+    end
+    if (strcmpi(options.reordering_method,'dissect'))
+        options.reorder_func = @(A) dissect(A);
+    elseif (strcmpi(options.reordering_method,'amd'))
+        options.reorder_func = @(A) amd(A);
+    elseif (strcmpi(options.reordering_method,'symrcm'))
+        options.reorder_func = @(A) symrcm(A);
+    end
 
     % Apply warning choice
     warning(options.disp_warnings,'MATLAB:illConditionedMatrix')
@@ -127,6 +146,10 @@ function [x,stats,options] = JacobianFreeNewtonKrylov(fun,x0, options)
     warning(options.disp_warnings,'MATLAB:bicgstab:tooSmallTolerance')
     warning(options.disp_warnings,'MATLAB:symmlq:tooSmallTolerance')
     warning(options.disp_warnings,'MATLAB:minres:tooSmallTolerance')
+    warning(options.disp_warnings,'MATLAB:pcg:tooSmallTolerance')
+    warning(options.disp_warnings,'MATLAB:bicgstabl:tooSmallTolerance')
+    warning(options.disp_warnings,'MATLAB:cgs:tooSmallTolerance')
+    warning(options.disp_warnings,'MATLAB:tfqmr:tooSmallTolerance')
     
 
     % Register the linesearch method
@@ -430,6 +453,20 @@ function [x,stats,options] = JacobianFreeNewtonKrylov(fun,x0, options)
 
     end
 
+    % Check on preconditioners
+    if (~isa(options.krylov_opts.M1,'function_handle') && ~isempty(options.krylov_opts.M1))
+        if (options.equilibrate && options.use_matrix)
+            warning("Cannot use Matrix Reordering and Equilibriate methods if user DOES NOT supply M1 preconditioner as a function handle")
+            options.equilibrate = false;
+        end
+    end
+    if (~isa(options.krylov_opts.M2,'function_handle') && ~isempty(options.krylov_opts.M2))
+        if (options.equilibrate && options.use_matrix)
+            warning("Cannot use Matrix Reordering and Equilibriate methods if user DOES NOT supply M2 preconditioner as a function handle")
+            options.equilibrate = false;
+        end
+    end
+
     % Initialize structures 
     stats = struct();
     stats.nl_iter=0;
@@ -468,7 +505,27 @@ function [x,stats,options] = JacobianFreeNewtonKrylov(fun,x0, options)
         
 
         if (options.use_matrix)
-            [s,lin_flag,lin_relres,lin_iter,lin_resvec] = options.krylov_fun(options.jacfun(x0),-F, x0, M1, M2);
+            if (options.equilibrate == false)
+                [s,lin_flag,lin_relres,lin_iter,lin_resvec] = options.krylov_fun(options.jacfun(x0),-F, x0, M1, M2);
+            else
+                J = options.jacfun(x0);
+                [P,R,C] = equilibrate(options.jacfun(x0));
+                Jnew = R*P*J*C;
+                Fnew = R*P*F;
+                q = options.reorder_func(Jnew);
+                Jnew = Jnew(q,q);
+                Fnew = Fnew(q);
+                JacfunNew = @(x0) [Jnew;];
+                if (isa(options.krylov_opts.M1,'function_handle'))
+                    M1 = @(b) options.krylov_opts.M1(b,JacfunNew,x0,options.krylov_opts.user_data);
+                end
+                if (isa(options.krylov_opts.M2,'function_handle'))
+                    M2 = @(b) options.krylov_opts.M2(b,JacfunNew,x0,options.krylov_opts.user_data);
+                end
+                [snew,lin_flag,lin_relres,lin_iter,lin_resvec] = options.krylov_fun(Jnew,-Fnew, x0, M1, M2);
+                s(q) = snew;
+                s = C*s(:);
+            end
         else
             [s,lin_flag,lin_relres,lin_iter,lin_resvec] = options.krylov_fun(Jop,-F, x0, M1, M2);
         end

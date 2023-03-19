@@ -4,7 +4,44 @@
 # PJFNK MATLAB
 This repository is for an implementation of the Preconditioned Jacobian-Free Newton-Krylov method in Matlab,
 as well as methods for standard full Newton method and formulation of full and sparse Numerical
-Jacobian matrices.
+Jacobian matrices. With this method, users can choose a Krylov method from any of the following:
+
+ - 'gmres' - Generalized Minimum RESidual
+
+    - (default) Most flexible method, but may require restarts to be practical
+
+ - 'bicgstab' - BiConjugate Gradients Stabilized
+
+    - Enhanced BiCG method with a GMRES(1) step for stabilization 
+
+ - 'bicgstabl'
+
+    - Enhanced BiCGStab method with a GMRES(2) step for stabilization 
+
+ - 'pcg'
+
+    - Optimal method for Symmetric Positive Definite Jacobians
+
+ - 'minres'
+
+    - Jacobians must be Symmetric, but does not need to be Positive Definite
+
+ - 'symmlq'
+
+    - Jacobians must be Symmetric, but does not need to be Positive Definite
+
+ - 'cgs'
+
+    - Similar to BiCG, but does not require transposition of matrix
+
+ - 'tfqmr'
+
+    - Optimal for Symmetric Jacobians that are indefinite
+
+
+
+More information on Krylov methods [here](https://www.mathworks.com/help/matlab/math/iterative-methods-for-linear-systems.html)
+
  
 
 # Requirements
@@ -282,6 +319,51 @@ library of Iterative Krylov Methods (see [here](https://www.mathworks.com/help/m
 This allows users to provide either a single preconditioner Matrix/Function [M1], 
 or a pair of preconditioners [M1 and M2]. If you provide both preconditioners, note 
 that they are resolve in the following order: M2\(M1\b).
+
+---
+
+# Automatic Matrix Reordering for JFNK
+
+When using Krylov methods to iteratively solve the linear sub-problems, often
+times the condition number of the matrix will make solutions difficult to 
+accomplish (even when preconditioning!). Thus, the `JacobianFreeNewtonKrylov`
+implementation here also allows the user to specify a reordering scheme. 
+
+```
+% Example - Specifying a reordering scheme
+options.use_matrix = true;    % Tells the method to use either the user 
+                              % provided Jacobian function or a numerical 
+                              % Jacobian matrix to apply ordering to
+
+options.equilibrate = true;   % Tells the method that you will request an
+                              % automatic reordering of the Jacobian
+
+options.reordering_method = 'dissect';  % Tells the method to use the nested
+                                        % dissection method for reordering
+
+```
+
+This option is only available to you if you specify to `use_matrix` for the 
+solve. Otherwise, if you do not set `use_matrix` to `true`, the `equilibrate`
+option will just be ignored. 
+
+There are 3 supported reordering methods:
+
+ - 'dissect' = [Nested dissection permutation](https://www.mathworks.com/help/matlab/ref/dissect.html)
+
+ - 'amd' = [Approximate minimum degree permutation](https://www.mathworks.com/help/matlab/ref/amd.html)
+
+ - 'symrcm' = [Sparse reverse Cuthill-McKee ordering](https://www.mathworks.com/help/matlab/ref/symrcm.html)
+
+More info on the [equilibrate method](https://www.mathworks.com/help/matlab/ref/equilibrate.html)
+
+**IMPORTANT NOTE**: You MUST supply all preconditioners to the `JacobianFreeNewtonKrylov`
+function as function handles, AND you must use the newly calculated Jacobian from 
+`Jacfun(x)` inside your preconditioning function to formulate the preconditioner 
+result. This is because when doing reordering, the shape/form of the original problem
+has changed, and may have changed in an unknown way. Thus, using this option means 
+that you may not know what your Jacobian looks like when it gets to your preconditioning
+function. 
 
 ---
 

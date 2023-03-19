@@ -25,6 +25,124 @@ toc;
 assert( stats.fnorm(end) <= opts.ftol )
 
 
+%% Test 2 - JFNK method with equilibriate options and dissect reordering
+
+% Load a sparse matrix A
+load("gmres_test.mat")
+
+% Construct BCs such that solution is vector of all 1s
+b = sum(A,2);
+x0 = zeros(size(b,1),1);
+
+% Build the function to pass
+F = @(x) [A*x-b];
+
+% Setup solver into
+solver_info = struct();
+solver_info.krylov_solver = 'gmres';
+solver_info.maxiter = 5;
+solver_info.ftol = 1e-6;
+
+solver_info.use_matrix = true;
+solver_info.jacfun = @(x) [A];
+
+% Krylov options
+solver_info.krylov_opts = struct();
+solver_info.krylov_opts.restart = 20;
+solver_info.krylov_opts.maxit = 20;
+
+solver_info.krylov_opts.M1 = @(b,Jacfun,x,options) ilu_precon(b,Jacfun,x,options);
+
+solver_info.use_matrix = true;
+solver_info.equilibrate = true;
+solver_info.reordering_method = 'dissect';
+
+tic;
+[x,stats,opts] = JacobianFreeNewtonKrylov(F,x0,solver_info);
+toc;
+
+assert( stats.fnorm(end) <= opts.ftol )
+
+
+
+%% Test 3 - JFNK method with equilibriate options and amd reordering
+
+% Load a sparse matrix A
+load("gmres_test.mat")
+
+% Construct BCs such that solution is vector of all 1s
+b = sum(A,2);
+x0 = zeros(size(b,1),1);
+
+% Build the function to pass
+F = @(x) [A*x-b];
+
+% Setup solver into
+solver_info = struct();
+solver_info.krylov_solver = 'gmres';
+solver_info.maxiter = 5;
+solver_info.ftol = 1e-6;
+
+solver_info.use_matrix = true;
+solver_info.jacfun = @(x) [A];
+
+% Krylov options
+solver_info.krylov_opts = struct();
+solver_info.krylov_opts.restart = 20;
+solver_info.krylov_opts.maxit = 20;
+
+solver_info.krylov_opts.M1 = @(b,Jacfun,x,options) ilu_precon(b,Jacfun,x,options);
+
+solver_info.use_matrix = true;
+solver_info.equilibrate = true;
+solver_info.reordering_method = 'amd';
+
+tic;
+[x,stats,opts] = JacobianFreeNewtonKrylov(F,x0,solver_info);
+toc;
+
+assert( stats.fnorm(end) <= opts.ftol )
+
+
+%% Test 4 - JFNK method with equilibriate options and symrcm reordering
+
+% Load a sparse matrix A
+load("gmres_test.mat")
+
+% Construct BCs such that solution is vector of all 1s
+b = sum(A,2);
+x0 = zeros(size(b,1),1);
+
+% Build the function to pass
+F = @(x) [A*x-b];
+
+% Setup solver into
+solver_info = struct();
+solver_info.krylov_solver = 'gmres';
+solver_info.maxiter = 5;
+solver_info.ftol = 1e-6;
+
+solver_info.use_matrix = true;
+solver_info.jacfun = @(x) [A];
+
+% Krylov options
+solver_info.krylov_opts = struct();
+solver_info.krylov_opts.restart = 20;
+solver_info.krylov_opts.maxit = 20;
+
+solver_info.krylov_opts.M1 = @(b,Jacfun,x,options) ilu_precon(b,Jacfun,x,options);
+
+solver_info.use_matrix = true;
+solver_info.equilibrate = true;
+solver_info.reordering_method = 'symrcm';
+
+tic;
+[x,stats,opts] = JacobianFreeNewtonKrylov(F,x0,solver_info);
+toc;
+
+assert( stats.fnorm(end) <= opts.ftol )
+
+
 % Matlab function from the example 
 function F = nlsf1a(x)
     % Evaluate the vector function
@@ -92,4 +210,13 @@ function M = tridiag_precon(d,Jac,x,options)
             M(i) = dpp(i) - (app(i) * M(i-1));
         end
     end
+end
+
+
+%% Helper function for ilu and ichol preconditioners
+% Defined preconditioner helper
+%       NOTE: x comes in as 'b' (or '-F') in this context
+function y = ilu_precon(b,Jac,x,options)
+    [L,U] = ilu(Jac(x),struct('type','ilutp','droptol',1e-6));
+    y = U\(L\b);
 end
