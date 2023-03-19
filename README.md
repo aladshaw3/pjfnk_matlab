@@ -285,6 +285,27 @@ that they are resolve in the following order: M2\(M1\b).
 
 ---
 
+# References
+
+** JacobianOperator and JacobianFreeNewtonKrylov**
+
+- Knoll D.A., Keyes D.E. (2003) "Jacobian-Free Newton-Krylov methods: a survey of 
+approaches and applications", Journal of Computational Physics.
+
+
+** BacktrackLinesearch **
+
+- Armijo, Larry (1966). "Minimization of functions having Lipschitz 
+continuous first partial derivatives". Pacific J. Math. 16 (1): 1–3.
+
+** YBusFormation for Power Flow **
+
+- Praviraj PG (2023). Admittance Bus (Y-Bus) Formation 
+(https://www.mathworks.com/matlabcentral/fileexchange/19512-admittance-bus-y-bus-formation), 
+MATLAB Central File Exchange. Retrieved March 19, 2023. 
+
+---
+
 # Citation
 
 Ladshaw, A.P., "PJFNK MATLAB: A MATLAB implementation for Jacobian-Free

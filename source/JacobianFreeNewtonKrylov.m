@@ -10,6 +10,10 @@
 %   matrix on a vector. In this way, this methodology is entirely
 %   matrix-free. 
 %
+%   Source: Knoll D.A., Keyes D.E. "Jacobian-Free Newton-Krylov methods: a 
+%       survey of approaches and applications", Journal of Computational 
+%       Physics, August 2003.
+%
 %   @author Austin Ladshaw
 %
 %   @date 03/12/2023
@@ -36,7 +40,8 @@
 %        mtype: The type of jacobian to use ['dense','sparse'] (optional)
 %        jacfun: function handle for evaluation of the Jacobian matrix at 
 %                 each iteration [J = jacfun(fun,x)] (optional)
-%        krylov_solver: ['gmres', 'bicgstab', etc...]
+%        krylov_solver: ['gmres', 'bicgstab', 'pcg', 'minres', 'symmlq', ...
+%                        'bicgstabl', 'cgs', 'tfqmr']
 %        krylov_opts: struct() whose form depends on the krylov solver
 %               for more information, see the MathWorks documentation:
 %               https://www.mathworks.com/help/matlab/math/iterative-methods-for-linear-systems.html
@@ -105,7 +110,7 @@ function [x,stats,options] = JacobianFreeNewtonKrylov(fun,x0, options)
     if (~isfield(options,'krylov_solver'))
         options.krylov_solver = 'gmres';
     else
-        if (~all(ismember(options.krylov_solver, {'gmres','bicgstab'}), 'all'))
+        if (~all(ismember(options.krylov_solver, {'gmres','bicgstab','pcg'}), 'all'))
             options.krylov_solver = 'gmres';
         end
     end
@@ -211,6 +216,216 @@ function [x,stats,options] = JacobianFreeNewtonKrylov(fun,x0, options)
         options.krylov_fun = @(Jop, F, x0, M1, M2) bicgstab(Jop, F, ...
             options.krylov_opts.tol, options.krylov_opts.maxit, ...
                 M1, M2, []);
+
+    elseif (strcmpi(options.krylov_solver,'pcg'))
+
+        % Checkfor pcg options
+        %       pcg(A,b,tol,maxit,M1,M2,x0)
+        if (~isfield(options.krylov_opts,'tol'))
+            options.krylov_opts.tol = 1e-4;
+        end
+        if (~isfield(options.krylov_opts,'maxit'))
+            options.krylov_opts.maxit = min(2*size(x0,1),20);
+        end
+        if (~isfield(options.krylov_opts,'M1'))
+            options.krylov_opts.M1 = [];
+            M1 = [];
+        else
+            if (isa(options.krylov_opts.M1,'function_handle'))
+                M1 = @(b) options.krylov_opts.M1(b,options.jacfun,x0,options.krylov_opts.user_data);
+            else
+                M1 = options.krylov_opts.M1;
+            end
+        end
+        if (~isfield(options.krylov_opts,'M2'))
+            options.krylov_opts.M2 = [];
+            M2 = [];
+        else
+            if (isa(options.krylov_opts.M2,'function_handle'))
+                M2 = @(b) options.krylov_opts.M2(b,options.jacfun,x0,options.krylov_opts.user_data);
+            else
+                M2 = options.krylov_opts.M2;
+            end
+        end
+        options.krylov_fun = @(Jop, F, x0, M1, M2) pcg(Jop, F, ...
+            options.krylov_opts.tol, options.krylov_opts.maxit, ...
+                M1, M2, []);
+
+
+    elseif (strcmpi(options.krylov_solver,'minres'))
+
+        % Checkfor minres options
+        %       minres(A,b,tol,maxit,M1,M2,x0)
+        if (~isfield(options.krylov_opts,'tol'))
+            options.krylov_opts.tol = 1e-4;
+        end
+        if (~isfield(options.krylov_opts,'maxit'))
+            options.krylov_opts.maxit = min(2*size(x0,1),20);
+        end
+        if (~isfield(options.krylov_opts,'M1'))
+            options.krylov_opts.M1 = [];
+            M1 = [];
+        else
+            if (isa(options.krylov_opts.M1,'function_handle'))
+                M1 = @(b) options.krylov_opts.M1(b,options.jacfun,x0,options.krylov_opts.user_data);
+            else
+                M1 = options.krylov_opts.M1;
+            end
+        end
+        if (~isfield(options.krylov_opts,'M2'))
+            options.krylov_opts.M2 = [];
+            M2 = [];
+        else
+            if (isa(options.krylov_opts.M2,'function_handle'))
+                M2 = @(b) options.krylov_opts.M2(b,options.jacfun,x0,options.krylov_opts.user_data);
+            else
+                M2 = options.krylov_opts.M2;
+            end
+        end
+        options.krylov_fun = @(Jop, F, x0, M1, M2) minres(Jop, F, ...
+            options.krylov_opts.tol, options.krylov_opts.maxit, ...
+                M1, M2, []);
+
+
+    elseif (strcmpi(options.krylov_solver,'symmlq'))
+
+        % Checkfor symmlq options
+        %       symmlq(A,b,tol,maxit,M1,M2,x0)
+        if (~isfield(options.krylov_opts,'tol'))
+            options.krylov_opts.tol = 1e-4;
+        end
+        if (~isfield(options.krylov_opts,'maxit'))
+            options.krylov_opts.maxit = min(2*size(x0,1),20);
+        end
+        if (~isfield(options.krylov_opts,'M1'))
+            options.krylov_opts.M1 = [];
+            M1 = [];
+        else
+            if (isa(options.krylov_opts.M1,'function_handle'))
+                M1 = @(b) options.krylov_opts.M1(b,options.jacfun,x0,options.krylov_opts.user_data);
+            else
+                M1 = options.krylov_opts.M1;
+            end
+        end
+        if (~isfield(options.krylov_opts,'M2'))
+            options.krylov_opts.M2 = [];
+            M2 = [];
+        else
+            if (isa(options.krylov_opts.M2,'function_handle'))
+                M2 = @(b) options.krylov_opts.M2(b,options.jacfun,x0,options.krylov_opts.user_data);
+            else
+                M2 = options.krylov_opts.M2;
+            end
+        end
+        options.krylov_fun = @(Jop, F, x0, M1, M2) symmlq(Jop, F, ...
+            options.krylov_opts.tol, options.krylov_opts.maxit, ...
+                M1, M2, []);
+
+
+    elseif (strcmpi(options.krylov_solver,'bicgstabl'))
+
+        % Checkfor symmlq options
+        %       symmlq(A,b,tol,maxit,M1,M2,x0)
+        if (~isfield(options.krylov_opts,'tol'))
+            options.krylov_opts.tol = 1e-4;
+        end
+        if (~isfield(options.krylov_opts,'maxit'))
+            options.krylov_opts.maxit = min(2*size(x0,1),20);
+        end
+        if (~isfield(options.krylov_opts,'M1'))
+            options.krylov_opts.M1 = [];
+            M1 = [];
+        else
+            if (isa(options.krylov_opts.M1,'function_handle'))
+                M1 = @(b) options.krylov_opts.M1(b,options.jacfun,x0,options.krylov_opts.user_data);
+            else
+                M1 = options.krylov_opts.M1;
+            end
+        end
+        if (~isfield(options.krylov_opts,'M2'))
+            options.krylov_opts.M2 = [];
+            M2 = [];
+        else
+            if (isa(options.krylov_opts.M2,'function_handle'))
+                M2 = @(b) options.krylov_opts.M2(b,options.jacfun,x0,options.krylov_opts.user_data);
+            else
+                M2 = options.krylov_opts.M2;
+            end
+        end
+        options.krylov_fun = @(Jop, F, x0, M1, M2) bicgstabl(Jop, F, ...
+            options.krylov_opts.tol, options.krylov_opts.maxit, ...
+                M1, M2, []);
+
+
+    elseif (strcmpi(options.krylov_solver,'cgs'))
+
+        % Checkfor symmlq options
+        %       symmlq(A,b,tol,maxit,M1,M2,x0)
+        if (~isfield(options.krylov_opts,'tol'))
+            options.krylov_opts.tol = 1e-4;
+        end
+        if (~isfield(options.krylov_opts,'maxit'))
+            options.krylov_opts.maxit = min(2*size(x0,1),20);
+        end
+        if (~isfield(options.krylov_opts,'M1'))
+            options.krylov_opts.M1 = [];
+            M1 = [];
+        else
+            if (isa(options.krylov_opts.M1,'function_handle'))
+                M1 = @(b) options.krylov_opts.M1(b,options.jacfun,x0,options.krylov_opts.user_data);
+            else
+                M1 = options.krylov_opts.M1;
+            end
+        end
+        if (~isfield(options.krylov_opts,'M2'))
+            options.krylov_opts.M2 = [];
+            M2 = [];
+        else
+            if (isa(options.krylov_opts.M2,'function_handle'))
+                M2 = @(b) options.krylov_opts.M2(b,options.jacfun,x0,options.krylov_opts.user_data);
+            else
+                M2 = options.krylov_opts.M2;
+            end
+        end
+        options.krylov_fun = @(Jop, F, x0, M1, M2) cgs(Jop, F, ...
+            options.krylov_opts.tol, options.krylov_opts.maxit, ...
+                M1, M2, []);
+
+
+    elseif (strcmpi(options.krylov_solver,'tfqmr'))
+
+        % Checkfor symmlq options
+        %       symmlq(A,b,tol,maxit,M1,M2,x0)
+        if (~isfield(options.krylov_opts,'tol'))
+            options.krylov_opts.tol = 1e-4;
+        end
+        if (~isfield(options.krylov_opts,'maxit'))
+            options.krylov_opts.maxit = min(2*size(x0,1),20);
+        end
+        if (~isfield(options.krylov_opts,'M1'))
+            options.krylov_opts.M1 = [];
+            M1 = [];
+        else
+            if (isa(options.krylov_opts.M1,'function_handle'))
+                M1 = @(b) options.krylov_opts.M1(b,options.jacfun,x0,options.krylov_opts.user_data);
+            else
+                M1 = options.krylov_opts.M1;
+            end
+        end
+        if (~isfield(options.krylov_opts,'M2'))
+            options.krylov_opts.M2 = [];
+            M2 = [];
+        else
+            if (isa(options.krylov_opts.M2,'function_handle'))
+                M2 = @(b) options.krylov_opts.M2(b,options.jacfun,x0,options.krylov_opts.user_data);
+            else
+                M2 = options.krylov_opts.M2;
+            end
+        end
+        options.krylov_fun = @(Jop, F, x0, M1, M2) tfqmr(Jop, F, ...
+            options.krylov_opts.tol, options.krylov_opts.maxit, ...
+                M1, M2, []);
+
     end
 
     % Initialize structures 

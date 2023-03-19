@@ -4,7 +4,11 @@
 %
 %   @details BacktrackLinesearch is a function that returns a Newton type
 %   step that is contracted to ensure smooth convergence towards a local
-%   solution/minima
+%   solution/minima.
+%
+%   Source: Armijo, Larry (1966). "Minimization of functions having 
+%   Lipschitz continuous first partial derivatives". Pacific J. Math. 
+%   16 (1): 1–3. doi:10.2140/pjm.1966.16.1.
 %
 %   @author Austin Ladshaw
 %
