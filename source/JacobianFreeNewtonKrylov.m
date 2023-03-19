@@ -110,7 +110,7 @@ function [x,stats,options] = JacobianFreeNewtonKrylov(fun,x0, options)
     if (~isfield(options,'krylov_solver'))
         options.krylov_solver = 'gmres';
     else
-        if (~all(ismember(options.krylov_solver, {'gmres','bicgstab','pcg'}), 'all'))
+        if (~all(ismember(options.krylov_solver, {'gmres','bicgstab','pcg','minres', 'symmlq','bicgstabl', 'cgs', 'tfqmr'}), 'all'))
             options.krylov_solver = 'gmres';
         end
     end
@@ -122,9 +122,11 @@ function [x,stats,options] = JacobianFreeNewtonKrylov(fun,x0, options)
     end
 
     % Apply warning choice
+    warning(options.disp_warnings,'MATLAB:illConditionedMatrix')
     warning(options.disp_warnings,'MATLAB:gmres:tooSmallTolerance')
     warning(options.disp_warnings,'MATLAB:bicgstab:tooSmallTolerance')
-    warning(options.disp_warnings,'MATLAB:illConditionedMatrix')
+    warning(options.disp_warnings,'MATLAB:symmlq:tooSmallTolerance')
+    warning(options.disp_warnings,'MATLAB:minres:tooSmallTolerance')
     
 
     % Register the linesearch method
