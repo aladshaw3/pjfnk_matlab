@@ -1,6 +1,8 @@
 [![Checks](https://github.com/aladshaw3/pjfnk_matlab/actions/workflows/unit_tests.yml/badge.svg)](https://github.com/aladshaw3/pjfnk_matlab/actions/workflows/unit_tests.yml)
 [![codecov](https://codecov.io/gh/aladshaw3/pjfnk_matlab/branch/main/graph/badge.svg)](https://codecov.io/gh/aladshaw3/pjfnk_matlab) 
 
+[![Open in MATLAB Online](https://www.mathworks.com/images/responsive/global/open-in-matlab-online.svg)](https://matlab.mathworks.com/open/github/v1?repo=aladshaw3/pjfnk_matlab)
+
 # PJFNK MATLAB
 This repository is for an implementation of the Preconditioned Jacobian-Free Newton-Krylov method in Matlab,
 as well as methods for standard full Newton method and formulation of full and sparse Numerical
